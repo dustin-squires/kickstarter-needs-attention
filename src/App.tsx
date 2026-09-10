@@ -117,7 +117,7 @@ export default function App() {
 
       <div className="content">
         <div className="page-intro">
-          <div><h2>Needs attention</h2><p>Backers whose pledge state may need a next step.</p></div>
+          <div><h2>Needs attention</h2><p>Backers who may need action before fulfillment.</p></div>
           <p className="updated"><span /> Updated just now</p>
         </div>
         <AttentionSummary
@@ -128,6 +128,7 @@ export default function App() {
         />
         <AttentionFilters
           includeInformational={includeInformational}
+          informationalCount={counts.informational}
           onInformationalChange={(checked) => {
             setIncludeInformational(checked);
             if (!checked && priorityFilter === "informational") setPriorityFilter("all");

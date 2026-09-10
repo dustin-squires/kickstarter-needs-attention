@@ -63,7 +63,7 @@ export function deriveAttentionReasons(
     reasons.push({
       code: "SURVEY_REQUIRED_MISSING",
       priority: isNearFulfillment ? "blocking" : "waiting",
-      title: "Required survey response missing",
+      title: "Missing required survey response",
       queueContext: isNearFulfillment
         ? `Fulfillment in ${pluralize(project.fulfillmentStartsInDays, "day")}`
         : `${fields} still missing`,

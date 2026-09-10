@@ -1,4 +1,4 @@
-import { actionLabels, priorityLabels } from "../domain/attention";
+import { actionLabels } from "../domain/attention";
 import type { AttentionItem, RecommendedAction } from "../domain/types";
 import { Icon } from "./Icon";
 import { PriorityBadge } from "./PriorityBadge";
@@ -91,7 +91,6 @@ export function BackerDetailDrawer({ item, onClose, onAction, onSnooze }: Backer
             </button>
           </div>
         )}
-        <small>{priorityLabels[primaryReason.priority]} · Based on current project timing</small>
       </footer>
     </aside>
   );

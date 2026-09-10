@@ -7,6 +7,7 @@ interface AttentionFiltersProps {
   priority: "all" | AttentionPriority;
   onPriorityChange: (value: "all" | AttentionPriority) => void;
   includeInformational: boolean;
+  informationalCount: number;
   onInformationalChange: (value: boolean) => void;
   snoozedCount: number;
   onRestoreSnoozed: () => void;
@@ -46,7 +47,9 @@ export function AttentionFilters(props: AttentionFiltersProps) {
           type="checkbox"
         />
         <span className="toggle" aria-hidden="true"><span /></span>
-        Show informational
+        {props.includeInformational
+          ? `Showing informational (${props.informationalCount})`
+          : `Show informational (${props.informationalCount} hidden)`}
       </label>
       {props.snoozedCount > 0 && (
         <button className="restore-control" onClick={props.onRestoreSnoozed} type="button">

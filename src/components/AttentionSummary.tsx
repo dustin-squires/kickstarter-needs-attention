@@ -19,7 +19,7 @@ export function AttentionSummary({ counts, total, activePriority, onSelect }: At
         type="button"
       >
         <span className="summary-icon">!</span>
-        <span><strong>{total}</strong><small>require attention now</small></span>
+        <span><strong>{total}</strong><small>need attention</small></span>
       </button>
       {priorities.map((priority) => (
         <button
