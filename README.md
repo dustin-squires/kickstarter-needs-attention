@@ -1,5 +1,7 @@
 # Kickstarter “Needs Attention” queue
 
+![Kickstarter creator Needs Attention queue with prioritized backers and a selected-backer detail panel](docs/needs-attention-queue.png)
+
 ## Problem
 
 Creators can inspect detailed backer state, but finding the operationally important exceptions may require knowing which filters and statuses to check. That makes it easy to miss a backer who is blocking fulfillment or spend time reviewing a state that requires no action.
