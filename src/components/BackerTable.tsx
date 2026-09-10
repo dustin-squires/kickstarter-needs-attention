@@ -1,5 +1,5 @@
 import { actionLabels } from "../domain/attention";
-import type { AttentionItem } from "../domain/types";
+import type { AttentionItem, RecommendedAction } from "../domain/types";
 import { Icon } from "./Icon";
 import { PriorityBadge } from "./PriorityBadge";
 
@@ -7,7 +7,7 @@ interface BackerTableProps {
   items: AttentionItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onAction: (item: AttentionItem) => void;
+  onAction: (item: AttentionItem, action: RecommendedAction) => void;
   onClearFilters: () => void;
 }
 
@@ -76,7 +76,7 @@ export function BackerTable({ items, selectedId, onSelect, onAction, onClearFilt
                 <td>
                   <div className="issue-cell">
                     <strong>{primaryReason.title}</strong>
-                    <small>{primaryReason.explanation}</small>
+                    <small>{primaryReason.queueContext}</small>
                     {item.reasons.length > 1 && <em>{item.reasons.length} issues</em>}
                   </div>
                 </td>
@@ -84,13 +84,13 @@ export function BackerTable({ items, selectedId, onSelect, onAction, onClearFilt
                 <td><span className="location"><span>{flags[backer.countryCode]}</span>{backer.location}</span></td>
                 <td>{backer.lastActivityDaysAgo === null ? "—" : backer.lastActivityDaysAgo === 0 ? "Today" : `${backer.lastActivityDaysAgo}d ago`}</td>
                 <td>
-                  {primaryReason.recommendedAction !== "NO_ACTION" ? (
+                  {primaryReason.recommendedActions[0] !== "NO_ACTION" ? (
                     <button
                       className="row-action"
-                      onClick={(event) => { event.stopPropagation(); onAction(item); }}
+                      onClick={(event) => { event.stopPropagation(); onAction(item, primaryReason.recommendedActions[0]); }}
                       type="button"
                     >
-                      {actionLabels[primaryReason.recommendedAction]}
+                      {actionLabels[primaryReason.recommendedActions[0]]}
                     </button>
                   ) : <span className="no-action">No action</span>}
                   <button className="more-button" onClick={(event) => event.stopPropagation()} type="button" aria-label={`More options for ${backer.name}`}>

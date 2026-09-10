@@ -13,10 +13,16 @@ export type AttentionReasonCode =
 
 export type RecommendedAction =
   | "SEND_REMINDER"
+  | "MESSAGE_BACKER"
   | "VIEW_SURVEY"
   | "EDIT_ADDRESS"
   | "VIEW_PLEDGE"
   | "NO_ACTION";
+
+export interface MissingSurveyField {
+  label: string;
+  requiredForFulfillment: boolean;
+}
 
 export interface Backer {
   id: string;
@@ -31,7 +37,7 @@ export interface Backer {
   paymentStatus: "paid" | "failed" | "pending";
   pledgeManagerStatus: "not_started" | "in_progress" | "complete" | "blocked";
   surveyStatus: "not_required" | "missing" | "complete";
-  missingSurveyFields: string[];
+  missingSurveyFields: MissingSurveyField[];
   addressStatus: "valid" | "needs_review" | "recently_changed";
   pledgeOverTimeStatus: "none" | "active" | "complete";
   lastActivityDaysAgo: number | null;
@@ -50,16 +56,16 @@ export interface AttentionReason {
   code: AttentionReasonCode;
   priority: AttentionPriority;
   title: string;
+  queueContext: string;
   explanation: string;
-  recommendedAction: RecommendedAction;
-  sortScore: number;
+  recommendedActions: RecommendedAction[];
+  urgencyScore: number;
 }
 
 export interface AttentionItem {
   backer: Backer;
   reasons: AttentionReason[];
   primaryReason: AttentionReason;
-  sortScore: number;
 }
 
 export interface QueueOptions {

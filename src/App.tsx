@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { actionLabels, buildAttentionQueue, getAttentionCounts } from "./domain/attention";
-import type { AttentionItem, AttentionPriority } from "./domain/types";
+import type { AttentionItem, AttentionPriority, RecommendedAction } from "./domain/types";
 import { backers } from "./data/backers";
 import { project } from "./data/project";
 import { AppShell } from "./components/AppShell";
@@ -21,23 +21,31 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [includeInformational, setIncludeInformational] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [snoozedBackerIds, setSnoozedBackerIds] = useState<string[]>([]);
 
   const fullQueue = useMemo(
     () => buildAttentionQueue(backers, project, { includeInformational: true }),
     [],
   );
   const defaultQueue = useMemo(() => buildAttentionQueue(backers, project), []);
-  const counts = useMemo(() => getAttentionCounts(fullQueue), [fullQueue]);
+  const activeQueue = useMemo(
+    () => fullQueue.filter((item) => !snoozedBackerIds.includes(item.backer.id)),
+    [fullQueue, snoozedBackerIds],
+  );
+  const activeDefaultCount = defaultQueue.filter(
+    (item) => !snoozedBackerIds.includes(item.backer.id),
+  ).length;
+  const counts = useMemo(() => getAttentionCounts(activeQueue), [activeQueue]);
 
   const visibleItems = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    return fullQueue.filter((item) => {
+    return activeQueue.filter((item) => {
       const matchesPriority = priorityFilter === "all" || item.primaryReason.priority === priorityFilter;
       const allowedInformation = includeInformational || item.primaryReason.priority !== "informational";
       const matchesSearch = !normalizedQuery || item.backer.name.toLowerCase().includes(normalizedQuery) || item.backer.email.toLowerCase().includes(normalizedQuery);
       return matchesPriority && allowedInformation && matchesSearch;
     });
-  }, [fullQueue, includeInformational, priorityFilter, searchQuery]);
+  }, [activeQueue, includeInformational, priorityFilter, searchQuery]);
 
   useEffect(() => {
     if (visibleItems.length === 0) {
@@ -65,9 +73,14 @@ export default function App() {
     setPriorityFilter(priority);
   };
 
-  const handleAction = (item: AttentionItem) => {
-    const action = actionLabels[item.primaryReason.recommendedAction];
+  const handleAction = (item: AttentionItem, recommendedAction: RecommendedAction) => {
+    const action = actionLabels[recommendedAction];
     setToastMessage(`${action} opened for ${item.backer.name}`);
+  };
+
+  const handleSnooze = (item: AttentionItem) => {
+    setSnoozedBackerIds((ids) => [...ids, item.backer.id]);
+    setToastMessage(`${item.backer.name} snoozed for 3 days`);
   };
 
   const clearFilters = () => {
@@ -97,7 +110,7 @@ export default function App() {
         {['Overview', 'Backers', 'Needs attention', 'Messages', 'Surveys', 'Shipping'].map((tab) => (
           <button className={tab === 'Needs attention' ? 'active' : ''} key={tab} type="button">
             {tab}
-            {tab === 'Needs attention' && <span className="tab-count">{defaultQueue.length}</span>}
+            {tab === 'Needs attention' && <span className="tab-count">{activeDefaultCount}</span>}
           </button>
         ))}
       </nav>
@@ -111,7 +124,7 @@ export default function App() {
           activePriority={priorityFilter}
           counts={counts}
           onSelect={handleSummarySelect}
-          total={defaultQueue.length}
+          total={activeDefaultCount}
         />
         <AttentionFilters
           includeInformational={includeInformational}
@@ -123,6 +136,11 @@ export default function App() {
           onQueryChange={setSearchQuery}
           priority={priorityFilter}
           query={searchQuery}
+          snoozedCount={snoozedBackerIds.length}
+          onRestoreSnoozed={() => {
+            setSnoozedBackerIds([]);
+            setToastMessage("Snoozed backers restored");
+          }}
         />
         <div className={`queue-layout ${selectedItem ? "has-drawer" : ""}`}>
           <BackerTable
@@ -132,7 +150,12 @@ export default function App() {
             onSelect={setSelectedBackerId}
             selectedId={selectedBackerId}
           />
-          <BackerDetailDrawer item={selectedItem} onAction={handleAction} onClose={() => setSelectedBackerId(null)} />
+          <BackerDetailDrawer
+            item={selectedItem}
+            onAction={handleAction}
+            onClose={() => setSelectedBackerId(null)}
+            onSnooze={handleSnooze}
+          />
         </div>
       </div>
       <Toast message={toastMessage} />

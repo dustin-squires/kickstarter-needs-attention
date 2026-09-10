@@ -1,19 +1,20 @@
 import { actionLabels, priorityLabels } from "../domain/attention";
-import type { AttentionItem } from "../domain/types";
+import type { AttentionItem, RecommendedAction } from "../domain/types";
 import { Icon } from "./Icon";
 import { PriorityBadge } from "./PriorityBadge";
 
 interface BackerDetailDrawerProps {
   item: AttentionItem | null;
   onClose: () => void;
-  onAction: (item: AttentionItem) => void;
+  onAction: (item: AttentionItem, action: RecommendedAction) => void;
+  onSnooze: (item: AttentionItem) => void;
 }
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 const statusLabel = (value: string) => value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 
-export function BackerDetailDrawer({ item, onClose, onAction }: BackerDetailDrawerProps) {
+export function BackerDetailDrawer({ item, onClose, onAction, onSnooze }: BackerDetailDrawerProps) {
   if (!item) return null;
   const { backer, primaryReason } = item;
 
@@ -71,12 +72,24 @@ export function BackerDetailDrawer({ item, onClose, onAction }: BackerDetailDraw
 
       <footer className="drawer-footer">
         <p className="eyebrow">Suggested next step</p>
-        {primaryReason.recommendedAction === "NO_ACTION" ? (
+        {primaryReason.recommendedActions[0] === "NO_ACTION" ? (
           <div className="no-action-callout"><Icon name="check" size={18} /><span><strong>No action required</strong><small>We’ll keep tracking this pledge.</small></span></div>
         ) : (
-          <button className="primary-button" onClick={() => onAction(item)} type="button">
-            {actionLabels[primaryReason.recommendedAction]} <Icon name="arrow" size={17} />
-          </button>
+          <div className="drawer-actions">
+            {primaryReason.recommendedActions.map((action, index) => (
+              <button
+                className={index === 0 ? "primary-button" : "secondary-button"}
+                key={action}
+                onClick={() => onAction(item, action)}
+                type="button"
+              >
+                {actionLabels[action]} {index === 0 && <Icon name="arrow" size={17} />}
+              </button>
+            ))}
+            <button className="snooze-button" onClick={() => onSnooze(item)} type="button">
+              Snooze for 3 days
+            </button>
+          </div>
         )}
         <small>{priorityLabels[primaryReason.priority]} · Based on current project timing</small>
       </footer>

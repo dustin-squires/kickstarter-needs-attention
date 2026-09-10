@@ -101,6 +101,8 @@ button, a, input, select { outline-offset: 2px; }
 .toggle-control input:checked + .toggle { background: var(--green); }
 .toggle-control input:checked + .toggle span { transform: translateX(13px); }
 .toggle-control input:focus-visible + .toggle { outline: 2px solid #007a46; outline-offset: 2px; }
+.restore-control { min-height: 30px; padding: 0 9px; border: 0; border-radius: 4px; background: #eef0ee; color: #4d544f; font-size: 10px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.restore-control:hover { background: #e4e7e4; }
 .sort-control { height: 38px; margin-left: auto; padding: 0 11px; border: 1px solid #cfd2ce; border-radius: 5px; background: #fff; display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; }
 .sort-control strong { color: #313431; font-weight: 600; }
 .sort-control .icon { margin-left: 4px; }
@@ -171,7 +173,11 @@ button, a, input, select { outline-offset: 2px; }
 .status-section > div:last-child { border-bottom: 0; }
 .status-section strong { color: #303430; font-size: 10px; text-transform: capitalize; }
 .drawer-footer { padding: 15px 18px 17px; border-top: 1px solid var(--border); background: #fafbfa; }
-.drawer-footer .primary-button { width: 100%; margin-bottom: 9px; }
+.drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 9px; }
+.drawer-actions .primary-button { width: 100%; grid-column: 1 / -1; }
+.drawer-actions .secondary-button { min-width: 0; padding: 0 9px; }
+.snooze-button { min-height: 38px; padding: 0 9px; border: 0; background: transparent; color: #59615b; font-size: 10px; font-weight: 600; cursor: pointer; }
+.snooze-button:hover { text-decoration: underline; }
 .drawer-footer > small { display: block; color: #848985; font-size: 9px; text-align: center; }
 .no-action-callout { margin-bottom: 10px; padding: 11px; border: 1px solid #bee5d1; border-radius: 5px; background: #effaf4; color: #087147; display: flex; align-items: center; gap: 9px; }
 .no-action-callout strong, .no-action-callout small { display: block; }

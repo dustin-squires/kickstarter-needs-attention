@@ -18,7 +18,7 @@ const makeBacker = (
 export const backers: Backer[] = [
   makeBacker(
     { id: "b-001", name: "James Park", email: "james.park@example.com", initials: "JP", avatarColor: "#42665b", location: "Seoul, South Korea", countryCode: "KR", reward: "Deluxe Edition", pledgeAmountCents: 12900 },
-    { surveyStatus: "missing", missingSurveyFields: ["shirt size", "color"], lastActivityDaysAgo: 8 },
+    { surveyStatus: "missing", missingSurveyFields: [{ label: "shirt size", requiredForFulfillment: true }, { label: "color", requiredForFulfillment: true }], lastActivityDaysAgo: 8 },
   ),
   makeBacker(
     { id: "b-002", name: "Alex Chen", email: "alex.chen@example.com", initials: "AC", avatarColor: "#8c5d40", location: "San Francisco, CA", countryCode: "US", reward: "Creator Edition", pledgeAmountCents: 14900 },
@@ -38,7 +38,7 @@ export const backers: Backer[] = [
   ),
   makeBacker(
     { id: "b-006", name: "Priya Shah", email: "priya.shah@example.com", initials: "PS", avatarColor: "#82577a", location: "London, UK", countryCode: "GB", reward: "Creator Edition", pledgeAmountCents: 14900 },
-    { surveyStatus: "missing", missingSurveyFields: ["lens finish"], addressStatus: "needs_review", lastActivityDaysAgo: 10 },
+    { surveyStatus: "missing", missingSurveyFields: [{ label: "lens finish", requiredForFulfillment: true }], addressStatus: "needs_review", lastActivityDaysAgo: 10 },
   ),
   makeBacker(
     { id: "b-007", name: "Mateo García", email: "mateo.garcia@example.com", initials: "MG", avatarColor: "#9a6947", location: "Madrid, Spain", countryCode: "ES", reward: "Standard Edition", pledgeAmountCents: 8900 },

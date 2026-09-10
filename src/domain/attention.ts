@@ -17,17 +17,31 @@ export const priorityLabels: Record<AttentionPriority, string> = {
 
 export const actionLabels: Record<RecommendedAction, string> = {
   SEND_REMINDER: "Send reminder",
+  MESSAGE_BACKER: "Message backer",
   VIEW_SURVEY: "View survey",
   EDIT_ADDRESS: "Edit address",
   VIEW_PLEDGE: "View pledge",
   NO_ACTION: "No action",
 };
 
-const deadlinePressure = (days: number, ceiling: number) =>
-  Math.max(0, Math.min(ceiling, ceiling - days));
+export const PRIORITY_RANK: Record<AttentionPriority, number> = {
+  blocking: 4,
+  action: 3,
+  waiting: 2,
+  informational: 1,
+};
+
+export const MAX_DEADLINE_PRESSURE_DAYS = 30;
+export const MAX_INACTIVITY_PRESSURE_DAYS = 20;
+export const FULFILLMENT_BLOCKING_WINDOW_DAYS = 14;
+export const ADDRESS_LOCK_ACTION_WINDOW_DAYS = 7;
+export const PLEDGE_MANAGER_REMINDER_WINDOW_DAYS = 14;
+
+const deadlinePressure = (days: number) =>
+  Math.max(0, MAX_DEADLINE_PRESSURE_DAYS - Math.min(days, MAX_DEADLINE_PRESSURE_DAYS));
 
 const inactivityPressure = (days: number | null) =>
-  Math.min(days ?? 0, 20);
+  Math.min(days ?? 0, MAX_INACTIVITY_PRESSURE_DAYS);
 
 const pluralize = (count: number, singular: string) =>
   `${count} ${singular}${count === 1 ? "" : "s"}`;
@@ -38,44 +52,59 @@ export function deriveAttentionReasons(
 ): AttentionReason[] {
   const reasons: AttentionReason[] = [];
 
-  if (backer.surveyStatus === "missing") {
-    const fields = backer.missingSurveyFields.join(" and ") || "required reward details";
-    const isNearFulfillment = project.fulfillmentStartsInDays <= 14;
+  const fulfillmentFields = backer.missingSurveyFields
+    .filter((field) => field.requiredForFulfillment)
+    .map((field) => field.label);
+
+  if (backer.surveyStatus === "missing" && fulfillmentFields.length > 0) {
+    const fields = fulfillmentFields.join(" and ");
+    const isNearFulfillment =
+      project.fulfillmentStartsInDays <= FULFILLMENT_BLOCKING_WINDOW_DAYS;
     reasons.push({
       code: "SURVEY_REQUIRED_MISSING",
       priority: isNearFulfillment ? "blocking" : "waiting",
       title: "Required survey response missing",
+      queueContext: isNearFulfillment
+        ? `Fulfillment in ${pluralize(project.fulfillmentStartsInDays, "day")}`
+        : `${fields} still missing`,
       explanation: isNearFulfillment
         ? `Fulfillment starts in ${pluralize(project.fulfillmentStartsInDays, "day")}, but ${fields} is still missing. This pledge cannot be prepared.`
         : `${fields} is still missing. There is time to follow up before fulfillment begins.`,
-      recommendedAction: "VIEW_SURVEY",
-      sortScore: (isNearFulfillment ? 400 : 210) + deadlinePressure(project.fulfillmentStartsInDays, 30),
+      recommendedActions: ["MESSAGE_BACKER", "VIEW_SURVEY"],
+      urgencyScore: deadlinePressure(project.fulfillmentStartsInDays),
     });
   }
 
   if (backer.paymentStatus === "failed") {
     reasons.push({
       code: "PAYMENT_FAILED",
-      priority: "action",
+      priority: "waiting",
       title: "Payment failed",
+      queueContext: backer.lastActivityDaysAgo === null
+        ? "Waiting for payment update"
+        : `No update in ${pluralize(backer.lastActivityDaysAgo, "day")}`,
       explanation:
-        "The latest charge failed and this pledge cannot progress until the backer updates their payment method.",
-      recommendedAction: "VIEW_PLEDGE",
-      sortScore: 330 + inactivityPressure(backer.lastActivityDaysAgo),
+        "The latest charge failed. This pledge is waiting for the backer to update their payment method; you can message them or review the pledge.",
+      recommendedActions: ["MESSAGE_BACKER", "VIEW_PLEDGE"],
+      urgencyScore: inactivityPressure(backer.lastActivityDaysAgo),
     });
   }
 
   if (backer.addressStatus === "needs_review") {
-    const nearLock = project.addressesLockInDays <= 7;
+    const nearLock =
+      project.addressesLockInDays <= ADDRESS_LOCK_ACTION_WINDOW_DAYS;
     reasons.push({
       code: "ADDRESS_NEEDS_REVIEW",
       priority: "action",
       title: "Shipping address needs review",
+      queueContext: nearLock
+        ? `Addresses lock in ${pluralize(project.addressesLockInDays, "day")}`
+        : "Review before addresses lock",
       explanation: nearLock
         ? `This address may not be usable for fulfillment. Addresses lock in ${pluralize(project.addressesLockInDays, "day")}.`
         : "This address may not be usable for fulfillment and should be reviewed before addresses lock.",
-      recommendedAction: "EDIT_ADDRESS",
-      sortScore: 320 + deadlinePressure(project.addressesLockInDays, 14),
+      recommendedActions: ["EDIT_ADDRESS", "MESSAGE_BACKER"],
+      urgencyScore: deadlinePressure(project.addressesLockInDays),
     });
   }
 
@@ -83,14 +112,18 @@ export function deriveAttentionReasons(
     backer.pledgeManagerStatus === "not_started" ||
     backer.pledgeManagerStatus === "in_progress";
 
-  if (pledgeManagerIncomplete && project.pledgeManagerClosesInDays <= 14) {
+  if (
+    pledgeManagerIncomplete &&
+    project.pledgeManagerClosesInDays <= PLEDGE_MANAGER_REMINDER_WINDOW_DAYS
+  ) {
     reasons.push({
       code: "PLEDGE_MANAGER_INCOMPLETE",
       priority: "waiting",
       title: "Pledge Manager incomplete",
+      queueContext: `Manager closes in ${pluralize(project.pledgeManagerClosesInDays, "day")}`,
       explanation: `This backer has not finished checkout. The Pledge Manager closes in ${pluralize(project.pledgeManagerClosesInDays, "day")}.`,
-      recommendedAction: "SEND_REMINDER",
-      sortScore: 200 + deadlinePressure(project.pledgeManagerClosesInDays, 20),
+      recommendedActions: ["SEND_REMINDER", "VIEW_PLEDGE"],
+      urgencyScore: deadlinePressure(project.pledgeManagerClosesInDays),
     });
   }
 
@@ -102,14 +135,20 @@ export function deriveAttentionReasons(
       code: "POT_PENDING",
       priority: "informational",
       title: "Waiting on final installment",
+      queueContext: "Final installment pending",
       explanation:
         "No creator action is required. This backer can enter the Pledge Manager after their final installment completes.",
-      recommendedAction: "NO_ACTION",
-      sortScore: 100,
+      recommendedActions: ["NO_ACTION"],
+      urgencyScore: 0,
     });
   }
 
-  return reasons.sort((a, b) => b.sortScore - a.sortScore || a.code.localeCompare(b.code));
+  return reasons.sort(
+    (a, b) =>
+      PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority] ||
+      b.urgencyScore - a.urgencyScore ||
+      a.code.localeCompare(b.code),
+  );
 }
 
 export function buildAttentionQueue(
@@ -125,7 +164,6 @@ export function buildAttentionQueue(
         backer,
         reasons,
         primaryReason: reasons[0],
-        sortScore: reasons[0].sortScore,
       } satisfies AttentionItem;
     })
     .filter((item): item is AttentionItem => item !== null)
@@ -136,7 +174,9 @@ export function buildAttentionQueue(
     )
     .sort(
       (a, b) =>
-        b.sortScore - a.sortScore ||
+        PRIORITY_RANK[b.primaryReason.priority] -
+          PRIORITY_RANK[a.primaryReason.priority] ||
+        b.primaryReason.urgencyScore - a.primaryReason.urgencyScore ||
         a.backer.name.localeCompare(b.backer.name),
     );
 }

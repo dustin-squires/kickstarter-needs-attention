@@ -8,7 +8,11 @@ Creators can inspect detailed backer state, but finding the operationally import
 
 This prototype adds a “Needs Attention” queue to a fictional Kickstarter Pledge Manager. Pure domain rules derive attention reasons from synthetic backer and project state, then prioritize each backer as blocking fulfillment, needing creator action, waiting on the backer, or informational.
 
-The queue supports priority filtering, name/email search, an optional informational view, and a selected-backer detail panel. Actions are simulated locally.
+The queue supports priority filtering, name/email search, an optional informational view, a selected-backer detail panel, and local snoozing. Each issue can recommend an ordered set of actions while keeping one concise next step in the table. Actions are simulated locally.
+
+## Why this instead of another Backer Report filter?
+
+A filter still asks a creator to know which status, deadline, and project-state combinations matter. This queue applies that operational interpretation first, then shows the small set of backers worth reviewing and explains each decision. The Backer Report remains the complete source of truth; “Needs Attention” is a focused workflow layered beside it.
 
 ## Product principle
 
@@ -16,11 +20,11 @@ Not every unusual state should generate an alert. An active Pledge Over Time ins
 
 ## Scope and caveat
 
-All data and business rules are synthetic and illustrative. This is a focused product-engineering exploration, not an attempt to reproduce Kickstarter’s internal logic. It has no backend, authentication, live Kickstarter integration, persistence, or real messaging/payment behavior.
+All data and business rules are synthetic and illustrative. This is a focused product-engineering exploration, not an attempt to reproduce Kickstarter’s internal logic. A production implementation would use Kickstarter’s actual fulfillment requirements—for example, which survey fields a reward needs—rather than infer blocking state from a deadline alone. It has no backend, authentication, live Kickstarter integration, persistence, or real messaging/payment behavior.
 
 ## Architecture
 
-The central logic lives in `src/domain/attention.ts` and is independent of React. It derives all applicable reasons for a backer, selects a primary reason by deterministic score, builds the queue, and calculates summary counts. UI components receive that derived state and handle only presentation and local interactions.
+The central logic lives in `src/domain/attention.ts` and is independent of React. It derives all applicable reasons for a backer, orders them by explicit priority rank and bounded urgency, builds the queue, and calculates summary counts. UI components receive that derived state and handle only presentation and local interactions.
 
 ## Run locally
 

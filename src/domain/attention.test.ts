@@ -30,14 +30,16 @@ const healthyBacker: Backer = {
   lastActivityDaysAgo: 2,
 };
 
+let fixtureSequence = 0;
+
 const withState = (state: Partial<Backer>): Backer => ({
   ...healthyBacker,
   ...state,
-  id: state.id ?? Math.random().toString(),
+  id: state.id ?? `fixture-${++fixtureSequence}`,
 });
 
 describe("deriveAttentionReasons", () => {
-  it("turns a failed payment into a creator action", () => {
+  it("treats a failed payment as waiting on the backer", () => {
     const [reason] = deriveAttentionReasons(
       withState({ paymentStatus: "failed" }),
       project,
@@ -45,8 +47,8 @@ describe("deriveAttentionReasons", () => {
 
     expect(reason).toMatchObject({
       code: "PAYMENT_FAILED",
-      priority: "action",
-      recommendedAction: "VIEW_PLEDGE",
+      priority: "waiting",
+      recommendedActions: ["MESSAGE_BACKER", "VIEW_PLEDGE"],
     });
   });
 
@@ -54,7 +56,10 @@ describe("deriveAttentionReasons", () => {
     const [reason] = deriveAttentionReasons(
       withState({
         surveyStatus: "missing",
-        missingSurveyFields: ["shirt size", "color"],
+        missingSurveyFields: [
+          { label: "shirt size", requiredForFulfillment: true },
+          { label: "color", requiredForFulfillment: true },
+        ],
       }),
       project,
     );
@@ -66,11 +71,23 @@ describe("deriveAttentionReasons", () => {
 
   it("downgrades a missing survey response when fulfillment is farther away", () => {
     const [reason] = deriveAttentionReasons(
-      withState({ surveyStatus: "missing", missingSurveyFields: ["size"] }),
+      withState({ surveyStatus: "missing", missingSurveyFields: [{ label: "size", requiredForFulfillment: true }] }),
       { ...project, fulfillmentStartsInDays: 15 },
     );
 
     expect(reason.priority).toBe("waiting");
+  });
+
+  it("does not surface a missing survey field that fulfillment does not require", () => {
+    const reasons = deriveAttentionReasons(
+      withState({
+        surveyStatus: "missing",
+        missingSurveyFields: [{ label: "How did you hear about us?", requiredForFulfillment: false }],
+      }),
+      project,
+    );
+
+    expect(reasons).toEqual([]);
   });
 
   it("returns no reasons for a fully complete backer", () => {
@@ -88,7 +105,7 @@ describe("deriveAttentionReasons", () => {
       addressesLockInDays: 2,
     })[0];
 
-    expect(near.sortScore).toBeGreaterThan(far.sortScore);
+    expect(near.urgencyScore).toBeGreaterThan(far.urgencyScore);
     expect(near.explanation).toContain("2 days");
   });
 
@@ -101,7 +118,7 @@ describe("deriveAttentionReasons", () => {
     expect(reason).toMatchObject({
       code: "PLEDGE_MANAGER_INCOMPLETE",
       priority: "waiting",
-      recommendedAction: "SEND_REMINDER",
+      recommendedActions: ["SEND_REMINDER", "VIEW_PLEDGE"],
     });
   });
 
@@ -119,7 +136,7 @@ describe("deriveAttentionReasons", () => {
     expect(reasons[0]).toMatchObject({
       code: "POT_PENDING",
       priority: "informational",
-      recommendedAction: "NO_ACTION",
+      recommendedActions: ["NO_ACTION"],
     });
   });
 
@@ -128,7 +145,7 @@ describe("deriveAttentionReasons", () => {
       withState({
         paymentStatus: "failed",
         surveyStatus: "missing",
-        missingSurveyFields: ["color"],
+        missingSurveyFields: [{ label: "color", requiredForFulfillment: true }],
       }),
       project,
     );
@@ -149,13 +166,13 @@ describe("buildAttentionQueue", () => {
     const action = withState({
       id: "action",
       name: "Action",
-      paymentStatus: "failed",
+      addressStatus: "needs_review",
     });
     const blocking = withState({
       id: "blocking",
       name: "Blocking",
       surveyStatus: "missing",
-      missingSurveyFields: ["size"],
+      missingSurveyFields: [{ label: "size", requiredForFulfillment: true }],
     });
 
     const queue = buildAttentionQueue([waiting, action, blocking], project);
