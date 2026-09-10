@@ -2,6 +2,8 @@
 
 ![Kickstarter creator Needs Attention queue with prioritized backers and a selected-backer detail panel](kickstarter.gif)
 
+[Live demo](https://kickstarter-needs-attention.onrender.com/)
+
 ## Problem
 
 Creators can inspect detailed backer state, but finding the operationally important exceptions may require knowing which filters and statuses to check. That makes it easy to miss a backer who is blocking fulfillment or spend time reviewing a state that requires no action.
@@ -22,35 +24,11 @@ Not every unusual state should generate an alert. An active Pledge Over Time ins
 
 ## Scope and caveat
 
-All data and business rules are synthetic and illustrative. This is a focused product-engineering exploration, not an attempt to reproduce Kickstarter’s internal logic. A production implementation would use Kickstarter’s actual fulfillment requirements—for example, which survey fields a reward needs—rather than infer blocking state from a deadline alone. It has no backend, authentication, live Kickstarter integration, persistence, or real messaging/payment behavior.
+All data and business rules are synthetic and illustrative. This is a focused product-engineering exploration, not an attempt to reproduce Kickstarter’s internal logic. A production implementation would use Kickstarter’s actual fulfillment requirements, for example, which survey fields a reward needs—rather than infer blocking state from a deadline alone. It has no backend, authentication, live Kickstarter integration, persistence, or real messaging/payment behavior.
 
 ## Architecture
 
 The central logic lives in `src/domain/attention.ts` and is independent of React. It derives all applicable reasons for a backer, orders them by explicit priority rank and bounded urgency, builds the queue, and calculates summary counts. UI components receive that derived state and handle only presentation and local interactions.
-
-## Run locally
-
-```sh
-npm install
-npm run dev
-```
-
-Run the focused rules suite and production build with:
-
-```sh
-npm test -- --run
-npm run build
-```
-
-## Deploy to Render
-
-The repository includes a `render.yaml` Blueprint for a static site. In Render:
-
-1. Grant Render's GitHub App access to the private `kickstarter-needs-attention` repository.
-2. Choose **New → Blueprint** and connect this repository.
-3. Review the `kickstarter-needs-attention` static site and apply the Blueprint.
-
-The Blueprint installs locked dependencies, runs the test suite, builds the Vite app, and publishes `dist`. Deploys from `main` run automatically after each commit. Node is pinned in `.node-version` for repeatable builds.
 
 ## What I would measure
 
