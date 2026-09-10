@@ -1,6 +1,6 @@
 # Kickstarter “Needs Attention” queue
 
-![Kickstarter creator Needs Attention queue with prioritized backers and a selected-backer detail panel](docs/needs-attention-queue.png)
+![Kickstarter creator Needs Attention queue with prioritized backers and a selected-backer detail panel](kickstarter.gif)
 
 ## Problem
 
