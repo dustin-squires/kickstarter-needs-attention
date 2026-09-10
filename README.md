@@ -40,6 +40,16 @@ npm test -- --run
 npm run build
 ```
 
+## Deploy to Render
+
+The repository includes a `render.yaml` Blueprint for a static site. In Render:
+
+1. Grant Render's GitHub App access to the private `kickstarter-needs-attention` repository.
+2. Choose **New → Blueprint** and connect this repository.
+3. Review the `kickstarter-needs-attention` static site and apply the Blueprint.
+
+The Blueprint installs locked dependencies, runs the test suite, builds the Vite app, and publishes `dist`. Deploys from `main` run automatically after each commit. Node is pinned in `.node-version` for repeatable builds.
+
 ## What I would measure
 
 - percentage of surfaced issues acted on

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: kickstarter-needs-attention
+    runtime: static
+    buildCommand: npm ci && npm test -- --run && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: commit
